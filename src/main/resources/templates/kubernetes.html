@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kubernetes 初學者教學</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell k8s-shell">
+    <div class="k8s-doc-layout">
+        <div th:replace="~{fragments/kubernetes-sidebar :: sidebar}"></div>
+        <div class="k8s-doc-content">
+    <section class="guide-hero">
+        <p class="eyebrow">Kubernetes 初學者教學</p>
+        <h1>這個 Spring Boot 網站在 K8s 裡怎麼運作</h1>
+        <p class="hero-copy">
+            這份教學拆成多頁。先看 Build 到 Deploy 和部署流程，再理解 image、command、kubelet，
+            最後逐頁讀 Namespace、Deployment、Service 的 YAML。每一頁都會把本專案實際檔案和用途對起來。
+        </p>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>建議閱讀順序</h2>
+        <p class="panel-copy">
+            左側頁籤會固定保留在教學旁邊。未來新增 Ingress、ConfigMap、Secret、HPA 等主題時，也會依類型放進左側導覽。
+        </p>
+        <div class="guide-card-grid">
+            <a class="guide-card" href="/kubernetes/build-to-deploy">
+                <strong>1. Build 到 Deploy</strong>
+                <span>先理解 Java 原始碼如何變成 Kubernetes 裡的 Pod。</span>
+            </a>
+            <a class="guide-card" href="/kubernetes/image-command">
+                <strong>2. Image 與 command</strong>
+                <span>釐清 image、Dockerfile ENTRYPOINT、K8s command 的差異。</span>
+            </a>
+            <a class="guide-card" href="/kubernetes/kubelet">
+                <strong>3. kubelet 與 kubectl</strong>
+                <span>理解 kubectl 送出需求後，Worker Node 如何真的啟動 container。</span>
+            </a>
+            <a class="guide-card" href="/kubernetes/namespace">
+                <strong>4. YAML 逐頁讀</strong>
+                <span>最後再拆 Namespace、Deployment、Service 的 YAML。</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>從檔案到部署的主線流程</h2>
+        <p class="panel-copy">
+            這個專案不是直接把 Java 丟進 Kubernetes。真正流程是：先用 <code>Dockerfile</code> 把 Spring Boot 打包成 Docker image，再讓 Docker Compose 或 Kubernetes 使用同一個 image。
+        </p>
+        <div class="file-flow">
+            <article>
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>Spring Boot 原始碼</h3>
+                    <p><code>src/main/java</code> 和 <code>src/main/resources/templates</code> 是網站程式與 HTML 頁面。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>Dockerfile 建立 image</h3>
+                    <p><code>Dockerfile</code> 先用 Maven build JAR，再把 JAR 放進 Java 21 runtime image，最後產生 <code>deployable-spring-site:0.1.0</code>。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>docker-compose.yml 本機跑 container</h3>
+                    <p><code>docker compose up --build</code> 會使用同一份 Dockerfile build image，然後用 <code>ports: 8080:8080</code> 讓瀏覽器直接打 localhost。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>deployment.yaml 讓 K8s 跑 Pod</h3>
+                    <p><code>image: deployable-spring-site:0.1.0</code> 指向前面 build 出來的 image，<code>replicas: 2</code> 讓 Kubernetes 跑兩個 Pod。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>service.yaml 提供 Pod 入口</h3>
+                    <p>Pod 會重建、IP 會變，所以 <code>Service</code> 用 <code>selector.app</code> 找 Pod，提供穩定的 cluster 內部入口。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">6</span>
+                <div>
+                    <h3>port-forward 讓本機瀏覽器進入 K8s</h3>
+                    <p>因為這個 Service 是 <code>ClusterIP</code>，本機要看 K8s 裡的網站，需要用 <code>kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo</code>。</p>
+                </div>
+            </article>
+        </div>
+        <div class="file-map">
+            <article>
+                <strong>Dockerfile</strong>
+                <p>定義 image 怎麼被做出來。</p>
+            </article>
+            <article>
+                <strong>docker-compose.yml</strong>
+                <p>本機用 Docker 跑同一個 image。</p>
+            </article>
+            <article>
+                <strong>k8s/deployment.yaml</strong>
+                <p>Kubernetes 用同一個 image 建 Pod。</p>
+            </article>
+            <article>
+                <strong>k8s/service.yaml</strong>
+                <p>Kubernetes 幫 Pod 建立穩定入口。</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>K8s 架構總覽</h2>
+        <p class="panel-copy">
+            這張圖說明 Kubernetes cluster 裡有哪些角色。它不是瀏覽器流量圖，而是 Kubernetes 如何接收 YAML、決定 Pod 放哪裡、並讓 Worker Node 執行 container 的管理架構。
+        </p>
+        <div class="cluster-diagram" aria-label="Kubernetes cluster architecture">
+            <figure class="architecture-image">
+                <img th:src="@{/images/k8s-architecture.png}" alt="Kubernetes Master 和 Worker Node 架構圖">
+                <figcaption>你提供的 Kubernetes 架構圖：圖上的 Master 是舊稱，現在常稱 Control Plane。kubectl 送到 API Server，再由 Worker Node 執行 Pod 和 Container。</figcaption>
+            </figure>
+            <section class="control-plane">
+                <h3>Control Plane</h3>
+                <p>負責管理整個 cluster，也就是你圖片裡的 Master。Master 是舊稱，現在官方文件常稱 Control Plane。</p>
+                <div class="component-grid">
+                    <article>
+                        <strong>API Server</strong>
+                        <span><code>kubectl apply</code> 會先打到這裡，所有 YAML 都由它接收。</span>
+                    </article>
+                    <article>
+                        <strong>Scheduler</strong>
+                        <span>決定新的 Pod 要放到哪一台 Worker Node。</span>
+                    </article>
+                    <article>
+                        <strong>Controller Manager</strong>
+                        <span>持續檢查實際狀態，例如 Deployment 是否真的有 2 個 Pod。</span>
+                    </article>
+                    <article>
+                        <strong>etcd</strong>
+                        <span>儲存 cluster 狀態，例如 Namespace、Deployment、Service 設定。</span>
+                    </article>
+                </div>
+            </section>
+            <section class="worker-nodes">
+                <h3>Worker Nodes</h3>
+                <p>真正執行你的 Spring Boot container 的機器。</p>
+                <div class="node-grid">
+                    <article>
+                        <strong>Worker Node A</strong>
+                        <span>kubelet 接收 Pod 任務，請 Container Runtime 啟動 container。</span>
+                        <mark>Pod A：Spring Boot</mark>
+                    </article>
+                    <article>
+                        <strong>Worker Node B</strong>
+                        <span>kube-proxy 協助 Service 把流量導到 Pod。</span>
+                        <mark>Pod B：Spring Boot</mark>
+                    </article>
+                </div>
+            </section>
+        </div>
+        <div class="architecture-notes">
+            <article>
+                <strong>你貼的圖是在講管理流程</strong>
+                <p><code>kubectl</code> 把 YAML 送到 API Server，Control Plane 決定如何建立 Pod，Worker Node 負責真的執行 container。</p>
+            </article>
+            <article>
+                <strong>下面的圖是在講網站流量</strong>
+                <p>瀏覽器不是直接打 API Server，而是透過 <code>port-forward</code> 連到 Service，再由 Service 轉到 Pod。</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>本專案網站流量</h2>
+        <p class="panel-copy">
+            本專案的 Service 是 <code>ClusterIP</code>，所以瀏覽器不能直接連到 cluster 內部。
+            本機測試時要先用 <code>kubectl port-forward</code> 建立臨時通道。
+        </p>
+        <div class="system-flow" aria-label="Kubernetes system flow">
+            <article class="flow-step user">
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>你的瀏覽器</h3>
+                    <p>你在本機打開 <code>http://localhost:8080/kubernetes</code>，瀏覽器送出 HTTP request。</p>
+                </div>
+            </article>
+            <article class="flow-step tool">
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>kubectl port-forward</h3>
+                    <p>因為 Service 是 <code>ClusterIP</code>，外部瀏覽器不能直接連進 cluster，所以用 <code>kubectl port-forward</code> 把本機 8080 暫時接到 Service 8080。</p>
+                </div>
+            </article>
+            <article class="flow-step service">
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>Service</h3>
+                    <p>Service 讀取 <code>selector.app: deployable-spring-site</code>，尋找 label 符合的 Pod，並把流量轉送過去。</p>
+                </div>
+            </article>
+            <article class="flow-step pod">
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>Pod A / Pod B</h3>
+                    <p>Deployment 設定 <code>replicas: 2</code>，所以 Kubernetes 會維持兩個 Pod。每個 Pod 裡都跑同一個 Spring Boot container。</p>
+                </div>
+            </article>
+            <article class="flow-step app">
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>Spring Boot</h3>
+                    <p>Spring Boot 處理 <code>/</code>、<code>/api/status</code>、<code>/kubernetes</code> 等路由，回應再沿原路回到瀏覽器。</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>三個 YAML 檔案如何接起來</h2>
+        <div class="timeline">
+            <div>
+                <strong>1. namespace.yaml 建立 spring-demo</strong>
+                <p>它只建立一個命名範圍，不會啟動網站。</p>
+            </div>
+            <div>
+                <strong>2. deployment.yaml 放進 spring-demo</strong>
+                <p><code>metadata.namespace: spring-demo</code> 讓 Deployment 進入剛建立的 Namespace，並建立 Pod 來跑 Spring Boot。</p>
+            </div>
+            <div>
+                <strong>3. service.yaml 也放進 spring-demo</strong>
+                <p>Service 用 <code>selector.app: deployable-spring-site</code> 找到 Deployment 建出的 Pod。</p>
+            </div>
+            <div>
+                <strong>4. port-forward 讓本機瀏覽器連進 Service</strong>
+                <p>因為 Service 是 ClusterIP，本機要看頁面就需要 <code>kubectl port-forward</code>。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>手動操作指令</h2>
+        <p class="panel-copy">
+            第一次部署時使用這組指令。它會建立 Namespace、Deployment、Service，最後用 port-forward 讓瀏覽器可以透過 localhost 看到網站。
+        </p>
+        <ol class="command-list command-steps">
+            <li th:each="command : ${commands}">
+                <span th:text="${command.number}">1</span>
+                <div>
+                    <strong th:text="${command.title}">建立 namespace</strong>
+                    <code th:text="${command.command}">kubectl apply -f k8s/namespace.yaml</code>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>修改網站後重新部署</h2>
+        <p class="panel-copy">
+            如果你改了 Java、HTML 或 CSS，Kubernetes 裡的 Pod 不會自動拿到新版程式。
+            你需要先重新 build image，再要求 Deployment 重啟 Pod，最後重新建立 port-forward。
+        </p>
+        <ol class="command-list command-steps">
+            <li th:each="command : ${updateCommands}">
+                <span th:text="${command.number}">1</span>
+                <div>
+                    <strong th:text="${command.title}">重新 build Docker image</strong>
+                    <code th:text="${command.command}">docker build -t deployable-spring-site:0.1.0 .</code>
+                </div>
+            </li>
+        </ol>
+        <p class="final-note">
+            完成後開啟 <code>http://localhost:8080/kubernetes</code>。如果頁面還是舊的，先確認 Docker image 是否有重新 build，並檢查 Pod 是否真的有被重啟。
+        </p>
+    </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

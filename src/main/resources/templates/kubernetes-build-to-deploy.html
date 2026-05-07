@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Java 到 Kubernetes 部署流程</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell k8s-shell">
+    <div class="k8s-doc-layout">
+        <div th:replace="~{fragments/kubernetes-sidebar :: sidebar}"></div>
+        <div class="k8s-doc-content">
+    <section class="guide-hero">
+        <p class="eyebrow">Build to Deploy</p>
+        <h1>Java 程式如何變成 Kubernetes 裡的 Pod</h1>
+        <p class="hero-copy">
+            Kubernetes 不會直接讀你的 Java 原始碼。部署前要先把 Spring Boot 網站做成 Docker image，
+            然後 Deployment YAML 再指定這個 image，讓 Kubernetes 建立 Pod 來執行 container。
+        </p>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>一條主線先看懂</h2>
+        <div class="build-flow">
+            <article>
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>寫 Java / HTML / CSS</h3>
+                    <p><code>src/main/java</code> 是 Spring Boot 程式，<code>src/main/resources/templates</code> 是 Thymeleaf 頁面，<code>src/main/resources/static</code> 是 CSS 和圖片。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>Dockerfile 打包 application</h3>
+                    <p><code>docker build</code> 會讀 <code>Dockerfile</code>。本專案的 Dockerfile 會先用 Maven build 出 Spring Boot JAR，再放進 Java 21 runtime image。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>建立 image 並加上 tag</h3>
+                    <p>指令 <code>docker build -t deployable-spring-site:0.1.0 .</code> 會建立一個 Docker image，並把 <code>deployable-spring-site:0.1.0</code> 這個 tag 貼到它身上。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>Deployment 指定 image</h3>
+                    <p><code>k8s/deployment.yaml</code> 裡的 <code>image: deployable-spring-site:0.1.0</code> 會告訴 Kubernetes：Pod 裡的 container 要用這個 image 啟動。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>Kubernetes 建立 Pod</h3>
+                    <p><code>replicas: 2</code> 表示 Deployment 會維持兩個 Pod。每個 Pod 裡面都跑同一份 Spring Boot container。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">6</span>
+                <div>
+                    <h3>Service 讓流量找到 Pod</h3>
+                    <p><code>k8s/service.yaml</code> 不會 build image，也不會建立 app。它用 <code>selector</code> 找到 Pod，提供穩定入口。</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>本專案檔案怎麼接起來</h2>
+        <div class="file-relation-grid">
+            <article>
+                <strong>Dockerfile</strong>
+                <p>負責把專案打包成 Docker image。它處理 Java build 和 runtime image。</p>
+                <code>docker build -t deployable-spring-site:0.1.0 .</code>
+            </article>
+            <article>
+                <strong>docker-compose.yml</strong>
+                <p>給本機 Docker 測試使用。它可以 build 同一份 Dockerfile，並把 container 的 8080 對到本機 8080。</p>
+                <code>docker compose up --build</code>
+            </article>
+            <article>
+                <strong>k8s/deployment.yaml</strong>
+                <p>給 Kubernetes 使用。它不負責 build，而是指定已經存在的 image，然後建立 Pod。</p>
+                <code>image: deployable-spring-site:0.1.0</code>
+            </article>
+            <article>
+                <strong>k8s/service.yaml</strong>
+                <p>給 Kubernetes 網路使用。它負責把流量導到 Deployment 建出的 Pod。</p>
+                <code>selector.app: deployable-spring-site</code>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>第一次部署順序</h2>
+        <ol class="command-list command-steps">
+            <li>
+                <span>1</span>
+                <div>
+                    <strong>先 build image</strong>
+                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                </div>
+            </li>
+            <li>
+                <span>2</span>
+                <div>
+                    <strong>建立 Namespace</strong>
+                    <code>kubectl apply -f k8s/namespace.yaml</code>
+                </div>
+            </li>
+            <li>
+                <span>3</span>
+                <div>
+                    <strong>建立 Deployment，讓 K8s 建 Pod</strong>
+                    <code>kubectl apply -f k8s/deployment.yaml</code>
+                </div>
+            </li>
+            <li>
+                <span>4</span>
+                <div>
+                    <strong>建立 Service，讓流量可以找到 Pod</strong>
+                    <code>kubectl apply -f k8s/service.yaml</code>
+                </div>
+            </li>
+            <li>
+                <span>5</span>
+                <div>
+                    <strong>把 Service 暫時接到本機</strong>
+                    <code>kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo</code>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>修改網站後為什麼要重 build</h2>
+        <p class="panel-copy">
+            你改 Java、HTML、CSS 或圖片時，只是改了專案檔案。Kubernetes 裡正在跑的 Pod 不會自動看到這些檔案，
+            因為 Pod 是從舊 image 啟動的。要讓新內容進 K8s，必須重新 build image，確認 cluster 拿得到新版 image，再重啟 Deployment。
+        </p>
+        <ol class="command-list command-steps">
+            <li>
+                <span>1</span>
+                <div>
+                    <strong>重新產生 image</strong>
+                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                </div>
+            </li>
+            <li>
+                <span>2</span>
+                <div>
+                    <strong>要求 Deployment 重啟 Pod</strong>
+                    <code>kubectl rollout restart deployment/deployable-spring-site -n spring-demo</code>
+                </div>
+            </li>
+            <li>
+                <span>3</span>
+                <div>
+                    <strong>等待新版 Pod 就緒</strong>
+                    <code>kubectl rollout status deployment/deployable-spring-site -n spring-demo</code>
+                </div>
+            </li>
+        </ol>
+        <p class="final-note">
+            簡單記法：<code>Dockerfile</code> 負責做 image，<code>deployment.yaml</code> 負責叫 Kubernetes 用 image 跑 Pod。
+            <code>rollout restart</code> 只會重建 Pod；如果 cluster 仍然拿到舊 image，畫面還是會是舊的。
+        </p>
+    </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

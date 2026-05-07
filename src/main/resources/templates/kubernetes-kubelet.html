@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>kubelet 與 kubectl 初學者教學</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell k8s-shell">
+    <div class="k8s-doc-layout">
+        <div th:replace="~{fragments/kubernetes-sidebar :: sidebar}"></div>
+        <div class="k8s-doc-content">
+    <section class="guide-hero">
+        <p class="eyebrow">Worker Node</p>
+        <h1>kubelet 是 Worker Node 上的現場管理員</h1>
+        <p class="hero-copy">
+            kubelet 不是你手動下指令的工具。你使用的是 <code>kubectl</code>。
+            kubelet 是每台 Worker Node 上的程式，負責接收 Kubernetes 分配的 Pod 任務，並讓 container 真的跑起來。
+        </p>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>先分清楚 kubectl 和 kubelet</h2>
+        <div class="file-relation-grid">
+            <article>
+                <strong>kubectl</strong>
+                <p>你在 terminal 使用的指令工具。它會把你的操作送到 Kubernetes API Server。</p>
+                <code>kubectl apply -f k8s/deployment.yaml</code>
+            </article>
+            <article>
+                <strong>kubelet</strong>
+                <p>跑在 Worker Node 上的管理程式。它負責讓被分配到這台 Node 的 Pod 真的啟動。</p>
+                <code>Worker Node 上的背景服務</code>
+            </article>
+            <article>
+                <strong>API Server</strong>
+                <p>Kubernetes 的主要入口。kubectl 送出的 YAML、查詢、刪除、重啟，都會先到這裡。</p>
+                <code>kubectl -> API Server</code>
+            </article>
+            <article>
+                <strong>Container Runtime</strong>
+                <p>真正啟動 container 的工具，例如 containerd。kubelet 會請它用指定 image 啟動 container。</p>
+                <code>kubelet -> containerd -> container</code>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>一個 Pod 被建立時發生什麼事</h2>
+        <div class="build-flow">
+            <article>
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>你下 kubectl 指令</h3>
+                    <p>例如 <code>kubectl apply -f k8s/deployment.yaml</code>。這不是直接叫某台機器啟動 container，而是把需求送進 Kubernetes。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>API Server 接收 YAML</h3>
+                    <p>API Server 會記錄 Deployment 想要的狀態，例如 <code>replicas: 2</code> 和 <code>image: deployable-spring-site:0.1.0</code>。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>Scheduler 決定 Pod 放哪裡</h3>
+                    <p>Scheduler 會選一台 Worker Node，決定新的 Pod 要放到哪台機器上。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>kubelet 接到任務</h3>
+                    <p>被選中的 Worker Node 上，kubelet 會看到這台機器應該要跑某個 Pod。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>kubelet 請 Runtime 啟動 container</h3>
+                    <p>kubelet 不直接執行你的 Java 程式。它會請 Container Runtime 用 Docker image 啟動 Spring Boot container。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">6</span>
+                <div>
+                    <h3>kubelet 回報狀態</h3>
+                    <p>你看到的 <code>Running</code>、<code>Ready</code>、重啟次數、健康檢查狀態，很多都是 kubelet 回報給 API Server 後顯示出來的。</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>kubelet 跟本專案 YAML 的關係</h2>
+        <div class="timeline">
+            <div>
+                <strong>image</strong>
+                <p><code>deployment.yaml</code> 寫 <code>image: deployable-spring-site:0.1.0</code>。kubelet 會讓 runtime 使用這個 image 啟動 container。</p>
+            </div>
+            <div>
+                <strong>containerPort</strong>
+                <p><code>containerPort: 8080</code> 告訴 Kubernetes 這個 container 裡的 Spring Boot app 會聽 8080。</p>
+            </div>
+            <div>
+                <strong>readinessProbe</strong>
+                <p>kubelet 會定期檢查 readiness。失敗時，Pod 暫時不會接 Service 轉進來的流量。</p>
+            </div>
+            <div>
+                <strong>livenessProbe</strong>
+                <p>kubelet 會定期檢查 liveness。持續失敗時，kubelet 可能會重啟 container。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>kubectl 常用指令</h2>
+        <p class="panel-copy">
+            下面指令都以本專案的 <code>spring-demo</code> namespace 和 <code>deployable-spring-site</code> 服務名稱為例。
+            遇到 <code>&lt;pod-name&gt;</code> 時，先用 <code>kubectl get pods -n spring-demo</code> 查出實際 Pod 名稱再替換。
+        </p>
+        <ol class="command-list command-steps">
+            <li th:each="command : ${commands}">
+                <span th:text="${command.number}">1</span>
+                <div>
+                    <strong th:text="${command.title}">查看 Pod 狀態</strong>
+                    <code th:text="${command.command}">kubectl get pods -n spring-demo</code>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>初學者最容易搞混的地方</h2>
+        <div class="explain-grid">
+            <article>
+                <h3>kubectl 不是 kubelet</h3>
+                <p><code>kubectl</code> 是你操作 Kubernetes 的 CLI。<code>kubelet</code> 是 Worker Node 上自動執行任務的程式。</p>
+            </article>
+            <article>
+                <h3>kubelet 不決定 Pod 放哪台</h3>
+                <p>Pod 放哪台是 Scheduler 決定。kubelet 是在被選中的 Node 上負責執行。</p>
+            </article>
+            <article>
+                <h3>kubelet 不等於 Docker</h3>
+                <p>kubelet 會管理 Pod，但真正啟動 container 的通常是 containerd 這類 Container Runtime。</p>
+            </article>
+            <article>
+                <h3>kubectl get pods 看到的是回報結果</h3>
+                <p>你查到的 Pod 狀態來自 Kubernetes 儲存的狀態，其中包含 kubelet 從 Worker Node 回報的資訊。</p>
+            </article>
+        </div>
+    </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

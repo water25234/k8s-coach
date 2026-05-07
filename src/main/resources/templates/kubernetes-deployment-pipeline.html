@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kubernetes 部署流程</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell k8s-shell">
+    <div class="k8s-doc-layout">
+        <div th:replace="~{fragments/kubernetes-sidebar :: sidebar}"></div>
+        <div class="k8s-doc-content">
+    <section class="guide-hero">
+        <p class="eyebrow">Deployment Pipeline</p>
+        <h1>從 git push 到 Kubernetes 上線</h1>
+        <p class="hero-copy">
+            真正的部署不是把 Java 原始碼丟給 Kubernetes。常見做法是先測試、build Docker image、推到 image registry，
+            再讓 Kubernetes 用新的 image tag 建立新版 Pod。
+        </p>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>先記住四個角色</h2>
+        <div class="file-relation-grid">
+            <article>
+                <strong>CI</strong>
+                <p>負責檢查程式碼，例如跑測試、編譯、build Docker image。</p>
+                <code>mvn test / docker build</code>
+            </article>
+            <article>
+                <strong>Image Registry</strong>
+                <p>負責保存 image，例如 Docker Hub、GitHub Container Registry、ECR、GCR、ACR。</p>
+                <code>docker push registry/app:tag</code>
+            </article>
+            <article>
+                <strong>CD</strong>
+                <p>負責把新版 image 部署到 Kubernetes，例如 kubectl、Helm、Argo CD。</p>
+                <code>kubectl apply / helm upgrade / argo cd sync</code>
+            </article>
+            <article>
+                <strong>Kubernetes</strong>
+                <p>負責拉 image、建立 Pod、健康檢查、滾動更新。它不負責從 Java 原始碼 build image。</p>
+                <code>image: deployable-spring-site:0.1.0</code>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>本機手動部署流程</h2>
+        <p class="panel-copy">
+            這是你目前學習用的流程。所有事情都在你的筆電上手動完成，適合理解概念，但不適合多人正式上線。
+        </p>
+        <div class="build-flow">
+            <article>
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>修改 Java / HTML / CSS</h3>
+                    <p>你改的是專案原始碼，例如 <code>src/main/java</code>、<code>templates</code>、<code>static</code>。</p>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>執行測試</h3>
+                    <p>確認 Spring Boot route、API、健康檢查都正常。你本機沒有 Maven 時，可以用 Docker 裡的 Maven 跑。</p>
+                    <code>docker run --rm -v "$PWD:/workspace" -w /workspace maven:3.9.9-eclipse-temurin-21 mvn test</code>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>build Docker image</h3>
+                    <p><code>Dockerfile</code> 會把 Spring Boot 專案打包成 image。Kubernetes 後面只會用這個 image，不會再讀你的原始碼。</p>
+                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>套用 K8s YAML</h3>
+                    <p><code>deployment.yaml</code> 指定 image，<code>service.yaml</code> 提供 Pod 入口。套用前要先確認你的 cluster 拿得到這個 image。</p>
+                    <code>kubectl apply -f k8s/namespace.yaml -f k8s/deployment.yaml -f k8s/service.yaml</code>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>等待 Deployment 就緒</h3>
+                    <p>Kubernetes 會建立 Pod，並透過 readiness / liveness probes 判斷服務狀態。</p>
+                    <code>kubectl rollout status deployment/deployable-spring-site -n spring-demo</code>
+                </div>
+            </article>
+            <article>
+                <span class="step-badge">6</span>
+                <div>
+                    <h3>本機瀏覽器測試</h3>
+                    <p>因為本專案 Service 是 <code>ClusterIP</code>，要用 port-forward 暫時接到本機。</p>
+                    <code>kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo</code>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>本機 cluster 到底去哪裡拿 image</h2>
+        <p class="panel-copy">
+            這是初學者最容易卡住的地方。<code>docker build</code> 建好的 image 不一定等於 Kubernetes 看得到的 image。
+            要看你用的是哪一種 cluster。
+        </p>
+        <div class="file-relation-grid">
+            <article>
+                <strong>Docker Desktop Kubernetes</strong>
+                <p>通常跟本機 Docker image store 比較接近，所以 <code>docker build -t deployable-spring-site:0.1.0 .</code> 後，K8s 較容易直接用到。</p>
+                <code>適合本專案入門教學</code>
+            </article>
+            <article>
+                <strong>Minikube</strong>
+                <p>Minikube 可能有自己的 Docker 環境。你需要在 Minikube 裡 build，或把 image 載入 Minikube。</p>
+                <code>minikube image load deployable-spring-site:0.1.0</code>
+            </article>
+            <article>
+                <strong>Kind</strong>
+                <p>Kind 的 node 是 container。你本機 build 的 image 不會自動出現在 Kind node 裡，通常要手動載入。</p>
+                <code>kind load docker-image deployable-spring-site:0.1.0</code>
+            </article>
+            <article>
+                <strong>遠端 EKS / GKE / AKS</strong>
+                <p>遠端 cluster 看不到你筆電本機 image。正式做法是 push 到 registry，再讓 cluster pull。</p>
+                <code>docker push registry.example.com/app:&lt;git-sha&gt;</code>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>CI/CD system flow</h2>
+        <p class="panel-copy">
+            這張流程是正式部署的主線。Kubernetes 位在後半段，只負責拉 image 和執行 Pod。
+        </p>
+        <div class="system-flow" aria-label="CI/CD deployment flow">
+            <article class="flow-step user">
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>Developer git push</h3>
+                    <p>工程師把 Java、HTML、CSS、YAML 變更推到 Git repository。</p>
+                </div>
+            </article>
+            <article class="flow-step tool">
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>CI 測試與 build</h3>
+                    <p>CI 執行測試，通過後讀 Dockerfile，建立新的 image。</p>
+                </div>
+            </article>
+            <article class="flow-step service">
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>Image Registry 保存 image</h3>
+                    <p>CI 把 image push 到 registry，並使用唯一 tag，例如 Git SHA。</p>
+                </div>
+            </article>
+            <article class="flow-step pod">
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>CD 更新部署設定</h3>
+                    <p>CD 更新 YAML、Helm values 或 Kustomize overlay 裡的 image tag。</p>
+                </div>
+            </article>
+            <article class="flow-step app">
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>Kubernetes rollout</h3>
+                    <p>Deployment 建立新版 Pod，readiness 通過後才讓 Service 導流到新版 Pod。</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>公司常見 CI/CD 部署流程</h2>
+        <p class="panel-copy">
+            正式環境通常不會在工程師筆電上 build image，也不會用手動複製檔案部署。
+            常見做法是讓 CI/CD 系統接手，確保每次部署都有紀錄、可追蹤、可回滾。
+        </p>
+        <div class="timeline">
+            <div>
+                <strong>1. git push</strong>
+                <p>工程師把程式碼推到 GitHub、GitLab 或公司 Git server。這是整條 pipeline 的起點。</p>
+            </div>
+            <div>
+                <strong>2. CI 跑測試</strong>
+                <p>CI 會執行 <code>mvn test</code>、靜態檢查、安全掃描。測試失敗就停止，不會 build image。</p>
+            </div>
+            <div>
+                <strong>3. CI docker build</strong>
+                <p>測試通過後，CI 讀取 <code>Dockerfile</code>，產生新的 image。正式環境建議用 Git commit SHA、build number 或語意化版本，不要一直覆蓋同一個 tag。</p>
+            </div>
+            <div>
+                <strong>4. CI docker push</strong>
+                <p>CI 把 image 推到 registry，例如 <code>registry.example.com/demo/deployable-spring-site:a1b2c3d</code>。</p>
+            </div>
+            <div>
+                <strong>5. CD 更新 image tag</strong>
+                <p>CD 把 <code>deployment.yaml</code>、Helm values 或 Kustomize image tag 更新成剛剛 push 的版本。</p>
+            </div>
+            <div>
+                <strong>6. 部署到 Kubernetes</strong>
+                <p>CD 執行 <code>kubectl apply</code>、<code>helm upgrade</code>，或由 Argo CD 偵測 Git 變更後自動同步。</p>
+            </div>
+            <div>
+                <strong>7. Kubernetes rollout</strong>
+                <p>Deployment 建立新版 Pod，readinessProbe 通過後才接流量。預設 RollingUpdate 會逐步替換舊 Pod；如果 YAML 設成 Recreate，則會先停舊 Pod 再建新 Pod。</p>
+            </div>
+            <div>
+                <strong>8. 驗證與回滾</strong>
+                <p>如果新版失敗，可以查看 log、事件，或回滾到上一個 image tag。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>deployment.yaml 在 pipeline 裡做什麼</h2>
+        <div class="explain-grid">
+            <article>
+                <h3>它不 build image</h3>
+                <p><code>deployment.yaml</code> 不會執行 <code>mvn package</code> 或 <code>docker build</code>。這些是 CI 或本機 Docker 的工作。</p>
+            </article>
+            <article>
+                <h3>它指定 image</h3>
+                <p><code>image: deployable-spring-site:0.1.0</code> 代表 Pod 要用哪個已存在的 image 啟動。</p>
+            </article>
+            <article>
+                <h3>它描述 runtime 設定</h3>
+                <p>例如 replicas、containerPort、env、probes、resources。這些是 container 跑起來以後的 K8s 管理設定。</p>
+            </article>
+            <article>
+                <h3>它讓 rollout 可控</h3>
+                <p>你可以透過 Deployment 看更新狀態、重啟 Pod、回滾版本，而不是手動管理單一 container。前提是 image tag 和部署紀錄要能追蹤。</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>固定 tag 與 rollout restart 的陷阱</h2>
+        <div class="explain-grid">
+            <article>
+                <h3>固定 tag 容易看錯版本</h3>
+                <p><code>deployable-spring-site:0.1.0</code> 如果一直重複覆蓋，你很難從 Pod 看出它到底跑哪一次 build 出來的內容。</p>
+            </article>
+            <article>
+                <h3>IfNotPresent 可能用到舊 image</h3>
+                <p><code>imagePullPolicy: IfNotPresent</code> 表示 node 已經有同名 image 時可能不重新拉。固定 tag 搭配這個設定，容易讓新版沒有真的進 Pod。</p>
+            </article>
+            <article>
+                <h3>rollout restart 只重建 Pod</h3>
+                <p><code>kubectl rollout restart</code> 會讓 Pod 重建，但不保證 image 內容變新。cluster 還是必須拿得到新版 image。</p>
+            </article>
+            <article>
+                <h3>正式環境用唯一 tag</h3>
+                <p>例如 <code>deployable-spring-site:a1b2c3d</code>。這樣可以追蹤、比較、回滾，也比較符合 CI/CD 操作。</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>正式環境怎麼讓使用者進來</h2>
+        <p class="panel-copy">
+            <code>kubectl port-forward</code> 適合本機測試和除錯，不是正式對外服務方式。
+        </p>
+        <div class="file-relation-grid">
+            <article>
+                <strong>Ingress</strong>
+                <p>常見正式入口。由 Ingress Controller 接 HTTP/HTTPS，再依 host 或 path 轉到 Service。</p>
+                <code>app.example.com -> Ingress -> Service -> Pod</code>
+            </article>
+            <article>
+                <strong>LoadBalancer Service</strong>
+                <p>雲端環境常用。雲平台會建立外部 Load Balancer，把流量導到 K8s Service。</p>
+                <code>Cloud LB -> Service -> Pod</code>
+            </article>
+            <article>
+                <strong>API Gateway</strong>
+                <p>大型系統常用於驗證、限流、路由、觀測，再轉進 cluster 內部服務。</p>
+                <code>Gateway -> Ingress/Service -> Pod</code>
+            </article>
+            <article>
+                <strong>port-forward</strong>
+                <p>只適合本機臨時測試。終端機關掉後通道就沒了，也不適合多人使用。</p>
+                <code>localhost:8080 -> Service 8080</code>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>常見部署指令對照</h2>
+        <ol class="command-list command-steps">
+            <li>
+                <span>1</span>
+                <div>
+                    <strong>本機測試</strong>
+                    <code>docker run --rm -v "$PWD:/workspace" -w /workspace maven:3.9.9-eclipse-temurin-21 mvn test</code>
+                </div>
+            </li>
+            <li>
+                <span>2</span>
+                <div>
+                    <strong>本機 build image</strong>
+                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                </div>
+            </li>
+            <li>
+                <span>3</span>
+                <div>
+                    <strong>正式環境常見 image tag</strong>
+                    <code>docker build -t registry.example.com/demo/deployable-spring-site:&lt;git-sha&gt; .</code>
+                </div>
+            </li>
+            <li>
+                <span>4</span>
+                <div>
+                    <strong>推到 registry</strong>
+                    <code>docker push registry.example.com/demo/deployable-spring-site:&lt;git-sha&gt;</code>
+                </div>
+            </li>
+            <li>
+                <span>5</span>
+                <div>
+                    <strong>手動套用 YAML</strong>
+                    <code>kubectl apply -f k8s/namespace.yaml -f k8s/deployment.yaml -f k8s/service.yaml</code>
+                </div>
+            </li>
+            <li>
+                <span>6</span>
+                <div>
+                    <strong>檢查 rollout</strong>
+                    <code>kubectl rollout status deployment/deployable-spring-site -n spring-demo</code>
+                </div>
+            </li>
+            <li>
+                <span>7</span>
+                <div>
+                    <strong>查看 Pod</strong>
+                    <code>kubectl get pods -n spring-demo -o wide</code>
+                </div>
+            </li>
+            <li>
+                <span>8</span>
+                <div>
+                    <strong>回滾 Deployment</strong>
+                    <code>kubectl rollout undo deployment/deployable-spring-site -n spring-demo</code>
+                </div>
+            </li>
+            <li>
+                <span>9</span>
+                <div>
+                    <strong>Minikube 載入本機 image</strong>
+                    <code>minikube image load deployable-spring-site:0.1.0</code>
+                </div>
+            </li>
+            <li>
+                <span>10</span>
+                <div>
+                    <strong>Kind 載入本機 image</strong>
+                    <code>kind load docker-image deployable-spring-site:0.1.0</code>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>最重要的結論</h2>
+        <p class="yaml-conclusion">
+            <code>Dockerfile</code> 定義 image 怎麼做，CI 或 <code>docker build</code> 真的產生 image，
+            registry 保存 image，<code>deployment.yaml</code> 指定 Kubernetes 要跑哪個 image。
+            Kubernetes 只負責拉 image 並執行 Pod，不負責從 Java 原始碼 build image。
+        </p>
+    </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

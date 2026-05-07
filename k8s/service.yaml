@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: deployable-spring-site
+  namespace: spring-demo
+  labels:
+    app: deployable-spring-site
+spec:
+  type: ClusterIP
+  selector:
+    app: deployable-spring-site
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

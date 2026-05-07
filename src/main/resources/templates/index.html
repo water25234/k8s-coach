@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${status.application}">Java 21 Spring Boot Demo</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell">
+    <section class="hero">
+        <div>
+            <p class="eyebrow">Deployable Spring Boot Starter</p>
+            <h1 th:text="${status.application}">Java 21 Spring Boot Demo</h1>
+            <p class="hero-copy">
+                A compact Spring Boot website that runs locally, in Docker, through Docker Compose,
+                and on Kubernetes.
+            </p>
+            <div class="actions" aria-label="Application checks">
+                <a class="button primary" href="/actuator/health">Health Check</a>
+                <a class="button" href="/api/status">Runtime JSON</a>
+                <a class="button" href="/kubernetes">K8s Guide</a>
+            </div>
+        </div>
+        <aside class="status-panel" aria-label="Application status">
+            <span class="status-pill" th:text="${status.status}">UP</span>
+            <dl>
+                <div>
+                    <dt>Profile</dt>
+                    <dd th:text="${status.profile}">default</dd>
+                </div>
+                <div>
+                    <dt>Version</dt>
+                    <dd th:text="${status.version}">0.1.0</dd>
+                </div>
+                <div>
+                    <dt>Java</dt>
+                    <dd th:text="${status.javaVersion}">21</dd>
+                </div>
+            </dl>
+        </aside>
+    </section>
+
+    <section class="content-grid" aria-label="Application details">
+        <article class="panel">
+            <h2>Technology Stack</h2>
+            <ul class="tag-list">
+                <li th:each="technology : ${technologies}" th:text="${technology}">Java 21</li>
+            </ul>
+        </article>
+
+        <article class="panel">
+            <h2>Deployment Targets</h2>
+            <ol class="target-list">
+                <li th:each="target : ${deploymentTargets}" th:text="${target}">Docker</li>
+            </ol>
+        </article>
+
+        <article class="panel wide">
+            <h2>Operational Checks</h2>
+            <div class="check-grid">
+                <a href="/actuator/health">
+                    <strong>/actuator/health</strong>
+                    <span>Spring Boot Actuator health endpoint for platforms and probes.</span>
+                </a>
+                <a href="/api/status">
+                    <strong>/api/status</strong>
+                    <span>Runtime metadata endpoint for API verification.</span>
+                </a>
+            </div>
+        </article>
+
+        <article class="panel wide">
+            <h2>Kubernetes Guide</h2>
+            <p class="panel-copy">
+                Read what the Deployment, Service, probes, resources, and namespace files do in this project.
+            </p>
+            <a class="text-link" href="/kubernetes">Open Kubernetes guide</a>
+        </article>
+    </section>
+</main>
+</body>
+</html>

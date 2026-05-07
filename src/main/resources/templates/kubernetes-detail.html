@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${doc.title}">Kubernetes YAML 詳解</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell k8s-shell">
+    <div class="k8s-doc-layout">
+        <div th:replace="~{fragments/kubernetes-sidebar :: sidebar}"></div>
+        <div class="k8s-doc-content">
+    <section class="guide-hero">
+        <p class="eyebrow" th:text="${doc.file}">k8s/namespace.yaml</p>
+        <h1 th:text="${doc.title}">Namespace YAML 詳解</h1>
+        <p class="hero-copy" th:text="${doc.summary}">說明</p>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>完整 YAML</h2>
+        <div class="single-yaml">
+            <pre><code th:text="${doc.yaml}">apiVersion: v1</code></pre>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>逐段對照說明</h2>
+        <div class="yaml-lines detailed">
+            <article th:each="section : ${doc.sections}">
+                <code th:text="${section.code}">apiVersion: v1</code>
+                <h3 th:text="${section.title}">使用 Kubernetes 核心 API</h3>
+                <p th:text="${section.explanation}">說明</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>常用檢查指令</h2>
+        <ol class="command-list">
+            <li th:each="command : ${doc.commands}">
+                <code th:text="${command}">kubectl get pods -n spring-demo</code>
+            </li>
+        </ol>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>這頁的重點</h2>
+        <p class="yaml-conclusion" th:text="${doc.conclusion}">結論</p>
+    </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

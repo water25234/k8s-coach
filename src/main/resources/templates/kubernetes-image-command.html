@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kubernetes image 與 command 教學</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main class="page-shell k8s-shell">
+    <div class="k8s-doc-layout">
+        <div th:replace="~{fragments/kubernetes-sidebar :: sidebar}"></div>
+        <div class="k8s-doc-content">
+    <section class="guide-hero">
+        <p class="eyebrow">Container Startup</p>
+        <h1>image 是來源，command 是啟動指令</h1>
+        <p class="hero-copy">
+            <code>image</code> 告訴 Kubernetes 要用哪個 container image 建立 container。
+            <code>command</code> 是 container 啟動後要執行什麼程式。它不會 build image，也不會把 Java 原始碼打包。
+        </p>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>先分清楚四個名詞</h2>
+        <div class="file-relation-grid">
+            <article>
+                <strong>Dockerfile</strong>
+                <p>定義 image 怎麼被做出來，例如複製 JAR、設定使用者、設定預設啟動指令。</p>
+                <code>ENTRYPOINT ["java", "-jar", "/app/app.jar"]</code>
+            </article>
+            <article>
+                <strong>image</strong>
+                <p>已經 build 好的 container 包。Kubernetes 只會用 image 建 container，不會讀你的 Java 原始碼。</p>
+                <code>image: deployable-spring-site:0.1.0</code>
+            </article>
+            <article>
+                <strong>command</strong>
+                <p>Kubernetes 裡的 <code>command</code> 會覆蓋 Dockerfile 的 <code>ENTRYPOINT</code>。它是啟動 container 的程式。</p>
+                <code>command: ["java", "-jar", "/app/app.jar"]</code>
+            </article>
+            <article>
+                <strong>args</strong>
+                <p>Kubernetes 裡的 <code>args</code> 會覆蓋 Dockerfile 的 <code>CMD</code>。常用來補啟動參數。</p>
+                <code>args: ["--server.port=8080"]</code>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>Container 啟動 system flow</h2>
+        <p class="panel-copy">
+            這張流程是解釋「image 和 command 何時被使用」，不是解釋瀏覽器流量。
+        </p>
+        <div class="system-flow" aria-label="Container startup flow">
+            <article class="flow-step user">
+                <span class="step-badge">1</span>
+                <div>
+                    <h3>Dockerfile build image</h3>
+                    <p><code>docker build</code> 讀 Dockerfile，把 Spring Boot JAR 放進 image，並設定預設 <code>ENTRYPOINT</code>。</p>
+                </div>
+            </article>
+            <article class="flow-step tool">
+                <span class="step-badge">2</span>
+                <div>
+                    <h3>image 存在某個地方</h3>
+                    <p>本機學習可能在 Docker Desktop；正式環境通常在 Docker Hub、GHCR、ECR、GCR 或 ACR。</p>
+                </div>
+            </article>
+            <article class="flow-step service">
+                <span class="step-badge">3</span>
+                <div>
+                    <h3>Deployment 指定 image</h3>
+                    <p><code>deployment.yaml</code> 的 <code>image</code> 指向已存在的 image。Kubernetes 會用它建立 container。</p>
+                </div>
+            </article>
+            <article class="flow-step pod">
+                <span class="step-badge">4</span>
+                <div>
+                    <h3>command 決定啟動方式</h3>
+                    <p>若 YAML 沒寫 <code>command</code>，就用 image 裡的預設 <code>ENTRYPOINT</code>。若有寫，就覆蓋預設啟動方式。</p>
+                </div>
+            </article>
+            <article class="flow-step app">
+                <span class="step-badge">5</span>
+                <div>
+                    <h3>Spring Boot 開始跑</h3>
+                    <p>container 裡的 Java process 啟動後，才會開始聽 8080、回應 <code>/</code>、<code>/api/status</code>、<code>/kubernetes</code>。</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>本專案目前怎麼做</h2>
+        <div class="yaml-split">
+            <pre><code>Dockerfile
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]</code></pre>
+            <div class="yaml-lines detailed">
+                <article>
+                    <code>deployment.yaml 沒有 command</code>
+                    <h3>所以使用 Dockerfile 的 ENTRYPOINT</h3>
+                    <p>本專案的 Deployment 只寫 <code>image</code>，沒有寫 <code>command</code>。因此 container 啟動時會使用 Dockerfile 裡的 <code>ENTRYPOINT</code>。</p>
+                </article>
+                <article>
+                    <code>image: deployable-spring-site:0.1.0</code>
+                    <h3>這只是指定 image</h3>
+                    <p>這行不會 build Java、不會執行 Maven。它只告訴 Kubernetes 要用哪個已經 build 好的 image。</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>你看到的 HAPI FHIR YAML 為什麼有 command</h2>
+        <p class="panel-copy">
+            那份 YAML 的 <code>command</code> 是覆蓋 container 啟動方式，不是 image，也不是 build 指令。
+        </p>
+        <div class="yaml-split">
+            <pre><code>containers:
+  - name: hapi-fhir-server
+    image: hapi-fhir-jpaserver-starter-hapi-fhir-jpaserver-start
+    command:
+      - "java"
+      - "--class-path"
+      - "/app/main.war"
+      - "org.springframework.boot.loader.PropertiesLauncher"</code></pre>
+            <div class="yaml-lines detailed">
+                <article>
+                    <code>image: ...</code>
+                    <h3>真正的 image 在這裡</h3>
+                    <p>Kubernetes 會先用這個 image 建 container。這個 image 內必須已經有 <code>/app/main.war</code>。</p>
+                </article>
+                <article>
+                    <code>command: ["java", ...]</code>
+                    <h3>啟動 container 後跑 java</h3>
+                    <p>這段只是 container 啟動時執行的程式。如果 image 裡沒有 <code>/app/main.war</code>，Pod 會啟動失敗。</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="lesson-panel">
+        <h2>初學者判斷規則</h2>
+        <div class="explain-grid">
+            <article>
+                <h3>看到 image</h3>
+                <p>問自己：這個 image 在哪裡？本機 Docker？Minikube？Kind？還是 registry？Kubernetes 拿得到嗎？</p>
+            </article>
+            <article>
+                <h3>看到 command</h3>
+                <p>問自己：這是在 container 啟動後跑什麼？它不是 build 步驟，也不是 Dockerfile。</p>
+            </article>
+            <article>
+                <h3>看到 Dockerfile</h3>
+                <p>問自己：這份檔案會在 <code>docker build</code> 時被讀取，用來做出 image。</p>
+            </article>
+            <article>
+                <h3>看到 rollout restart</h3>
+                <p>問自己：Pod 會重建，但它重建時拿到的是新版 image 還是舊版 image？</p>
+            </article>
+        </div>
+    </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>
