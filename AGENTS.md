@@ -4,11 +4,11 @@
 
 This repository contains a Java 21 Spring Boot website with container and Kubernetes deployment assets.
 
-- `src/main/java/com/example/demo/`: Spring Boot application code, controllers, and app services.
+- `src/main/java/com/example/k8scoach/`: Spring Boot application code, controllers, and app services.
 - `src/main/resources/templates/`: Thymeleaf HTML views.
 - `src/main/resources/static/`: static assets such as CSS.
 - `src/main/resources/application.yml`: application and Actuator configuration.
-- `src/test/java/com/example/demo/`: JUnit and Spring Boot tests.
+- `src/test/java/com/example/k8scoach/`: JUnit and Spring Boot tests.
 - `Dockerfile`, `docker-compose.yml`: container build and local Compose runtime.
 - `k8s/`: Kubernetes namespace, Deployment, and Service manifests.
 - `openspec/`: OpenSpec proposal, design, specs, and task tracking.
@@ -30,8 +30,8 @@ mvn test
 Build and run with Docker:
 
 ```bash
-docker build -t deployable-spring-site:0.1.0 .
-docker run --rm -p 8080:8080 deployable-spring-site:0.1.0
+docker build -t k8s-coach:0.1.0 .
+docker run --rm -p 8080:8080 k8s-coach:0.1.0
 ```
 
 Start the Compose service:

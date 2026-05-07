@@ -34,7 +34,7 @@ Alternative considered: Gradle. Gradle is also well supported, but Maven is simp
 
 The homepage will be rendered server-side with Thymeleaf. This keeps the project focused on Spring Framework and Spring Boot without introducing a frontend build toolchain.
 
-Alternative considered: static HTML only. Static HTML would be simpler, but Thymeleaf demonstrates Spring MVC integration and allows runtime values such as active profile, Java version, and application version to be shown in the page.
+Alternative considered: static HTML only. Static HTML would be simpler, but Thymeleaf shows Spring MVC integration and allows runtime values such as active profile, Java version, and application version to be shown in the page.
 
 Alternative considered: React/Vite frontend. A separate frontend stack is unnecessary for a simple deployable starter and would add build and container complexity outside the current goal.
 

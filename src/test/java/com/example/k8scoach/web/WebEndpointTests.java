@@ -1,4 +1,4 @@
-package com.example.demo.web;
+package com.example.k8scoach.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -24,7 +24,7 @@ class WebEndpointTests {
     void homepageRendersDeploymentFocusedContent() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Java 21 Spring Boot Demo")))
+                .andExpect(content().string(containsString("K8s Coach")))
                 .andExpect(content().string(containsString("Deployment Targets")))
                 .andExpect(content().string(containsString("Kubernetes Deployment + Service")))
                 .andExpect(content().string(containsString("Open Kubernetes guide")));
@@ -34,7 +34,7 @@ class WebEndpointTests {
     void statusEndpointReturnsRuntimeMetadata() throws Exception {
         mockMvc.perform(get("/api/status"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.application").value("Java 21 Spring Boot Demo"))
+                .andExpect(jsonPath("$.application").value("K8s Coach"))
                 .andExpect(jsonPath("$.version").value("0.1.0"))
                 .andExpect(jsonPath("$.profile").value("default"))
                 .andExpect(jsonPath("$.javaVersion").exists())
@@ -80,8 +80,8 @@ class WebEndpointTests {
                 .andExpect(content().string(containsString("本專案網站流量")))
                 .andExpect(content().string(containsString("建議閱讀順序")))
                 .andExpect(content().string(containsString("修改網站後重新部署")))
-                .andExpect(content().string(containsString("docker build -t deployable-spring-site:0.1.0 .")))
-                .andExpect(content().string(containsString("kubectl rollout restart deployment/deployable-spring-site -n spring-demo")))
+                .andExpect(content().string(containsString("docker build -t k8s-coach:0.1.0 .")))
+                .andExpect(content().string(containsString("kubectl rollout restart deployment/k8s-coach -n k8s-coach")))
                 .andExpect(content().string(containsString("/kubernetes/build-to-deploy")))
                 .andExpect(content().string(containsString("/kubernetes/deployment-pipeline")))
                 .andExpect(content().string(containsString("/kubernetes/image-command")))
@@ -100,10 +100,10 @@ class WebEndpointTests {
                 .andExpect(content().string(containsString("Dockerfile 打包 application")))
                 .andExpect(content().string(containsString("建立 image 並加上 tag")))
                 .andExpect(content().string(containsString("Deployment 指定 image")))
-                .andExpect(content().string(containsString("docker build -t deployable-spring-site:0.1.0 .")))
-                .andExpect(content().string(containsString("image: deployable-spring-site:0.1.0")))
+                .andExpect(content().string(containsString("docker build -t k8s-coach:0.1.0 .")))
+                .andExpect(content().string(containsString("image: k8s-coach:0.1.0")))
                 .andExpect(content().string(containsString("確認 cluster 拿得到新版 image")))
-                .andExpect(content().string(containsString("kubectl rollout restart deployment/deployable-spring-site -n spring-demo")));
+                .andExpect(content().string(containsString("kubectl rollout restart deployment/k8s-coach -n k8s-coach")));
     }
 
     @Test
@@ -115,8 +115,8 @@ class WebEndpointTests {
                 .andExpect(content().string(containsString("Image Registry")))
                 .andExpect(content().string(containsString("本機 cluster 到底去哪裡拿 image")))
                 .andExpect(content().string(containsString("Docker Desktop Kubernetes")))
-                .andExpect(content().string(containsString("minikube image load deployable-spring-site:0.1.0")))
-                .andExpect(content().string(containsString("kind load docker-image deployable-spring-site:0.1.0")))
+                .andExpect(content().string(containsString("minikube image load k8s-coach:0.1.0")))
+                .andExpect(content().string(containsString("kind load docker-image k8s-coach:0.1.0")))
                 .andExpect(content().string(containsString("CI/CD system flow")))
                 .andExpect(content().string(containsString("CI docker build")))
                 .andExpect(content().string(containsString("CI docker push")))
@@ -124,8 +124,8 @@ class WebEndpointTests {
                 .andExpect(content().string(containsString("固定 tag 與 rollout restart 的陷阱")))
                 .andExpect(content().string(containsString("正式環境怎麼讓使用者進來")))
                 .andExpect(content().string(containsString("deployment.yaml 在 pipeline 裡做什麼")))
-                .andExpect(content().string(containsString("docker push registry.example.com/demo/deployable-spring-site:&lt;git-sha&gt;")))
-                .andExpect(content().string(containsString("kubectl rollout undo deployment/deployable-spring-site -n spring-demo")))
+                .andExpect(content().string(containsString("docker push registry.example.com/k8s-coach/k8s-coach:&lt;git-sha&gt;")))
+                .andExpect(content().string(containsString("kubectl rollout undo deployment/k8s-coach -n k8s-coach")))
                 .andExpect(content().string(containsString("Kubernetes 只負責拉 image 並執行 Pod")));
     }
 
@@ -155,10 +155,10 @@ class WebEndpointTests {
                 .andExpect(content().string(containsString("Container Runtime")))
                 .andExpect(content().string(containsString("kubelet 請 Runtime 啟動 container")))
                 .andExpect(content().string(containsString("kubectl 常用指令")))
-                .andExpect(content().string(containsString("kubectl get pods -n spring-demo -o wide")))
-                .andExpect(content().string(containsString("kubectl describe pod &lt;pod-name&gt; -n spring-demo")))
-                .andExpect(content().string(containsString("kubectl logs deployment/deployable-spring-site -n spring-demo")))
-                .andExpect(content().string(containsString("kubectl delete namespace spring-demo")));
+                .andExpect(content().string(containsString("kubectl get pods -n k8s-coach -o wide")))
+                .andExpect(content().string(containsString("kubectl describe pod &lt;pod-name&gt; -n k8s-coach")))
+                .andExpect(content().string(containsString("kubectl logs deployment/k8s-coach -n k8s-coach")))
+                .andExpect(content().string(containsString("kubectl delete namespace k8s-coach")));
     }
 
     @Test
@@ -168,7 +168,7 @@ class WebEndpointTests {
                 .andExpect(content().string(containsString("Namespace YAML 詳解")))
                 .andExpect(content().string(containsString("apiVersion: v1")))
                 .andExpect(content().string(containsString("kind: Namespace")))
-                .andExpect(content().string(containsString("metadata.name: spring-demo")));
+                .andExpect(content().string(containsString("metadata.name: k8s-coach")));
     }
 
     @Test
@@ -188,7 +188,7 @@ class WebEndpointTests {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Service YAML 詳解")))
                 .andExpect(content().string(containsString("type: ClusterIP")))
-                .andExpect(content().string(containsString("selector.app: deployable-spring-site")))
+                .andExpect(content().string(containsString("selector.app: k8s-coach")))
                 .andExpect(content().string(containsString("targetPort: http")));
     }
 }

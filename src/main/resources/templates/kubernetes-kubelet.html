@@ -60,7 +60,7 @@
                 <span class="step-badge">2</span>
                 <div>
                     <h3>API Server 接收 YAML</h3>
-                    <p>API Server 會記錄 Deployment 想要的狀態，例如 <code>replicas: 2</code> 和 <code>image: deployable-spring-site:0.1.0</code>。</p>
+                    <p>API Server 會記錄 Deployment 想要的狀態，例如 <code>replicas: 2</code> 和 <code>image: k8s-coach:0.1.0</code>。</p>
                 </div>
             </article>
             <article>
@@ -99,7 +99,7 @@
         <div class="timeline">
             <div>
                 <strong>image</strong>
-                <p><code>deployment.yaml</code> 寫 <code>image: deployable-spring-site:0.1.0</code>。kubelet 會讓 runtime 使用這個 image 啟動 container。</p>
+                <p><code>deployment.yaml</code> 寫 <code>image: k8s-coach:0.1.0</code>。kubelet 會讓 runtime 使用這個 image 啟動 container。</p>
             </div>
             <div>
                 <strong>containerPort</strong>
@@ -119,15 +119,15 @@
     <section class="lesson-panel">
         <h2>kubectl 常用指令</h2>
         <p class="panel-copy">
-            下面指令都以本專案的 <code>spring-demo</code> namespace 和 <code>deployable-spring-site</code> 服務名稱為例。
-            遇到 <code>&lt;pod-name&gt;</code> 時，先用 <code>kubectl get pods -n spring-demo</code> 查出實際 Pod 名稱再替換。
+            下面指令都以本專案的 <code>k8s-coach</code> namespace 和 <code>k8s-coach</code> 服務名稱為例。
+            遇到 <code>&lt;pod-name&gt;</code> 時，先用 <code>kubectl get pods -n k8s-coach</code> 查出實際 Pod 名稱再替換。
         </p>
         <ol class="command-list command-steps">
             <li th:each="command : ${commands}">
                 <span th:text="${command.number}">1</span>
                 <div>
                     <strong th:text="${command.title}">查看 Pod 狀態</strong>
-                    <code th:text="${command.command}">kubectl get pods -n spring-demo</code>
+                    <code th:text="${command.command}">kubectl get pods -n k8s-coach</code>
                 </div>
             </li>
         </ol>

@@ -1,6 +1,6 @@
-# Java 21 Spring Boot Demo
+# K8s Coach
 
-A small Spring Boot 3.x website that demonstrates a complete deployment path from local development to Docker, Docker Compose, and Kubernetes.
+A small Spring Boot 3.x website that shows a complete deployment path from local development to Docker, Docker Compose, and Kubernetes.
 
 ## Stack
 
@@ -43,13 +43,13 @@ http://localhost:8080/actuator/health
 Build the image:
 
 ```bash
-docker build -t deployable-spring-site:0.1.0 .
+docker build -t k8s-coach:0.1.0 .
 ```
 
 Run the container:
 
 ```bash
-docker run --rm -p 8080:8080 -e SPRING_PROFILES_ACTIVE=docker deployable-spring-site:0.1.0
+docker run --rm -p 8080:8080 -e SPRING_PROFILES_ACTIVE=docker k8s-coach:0.1.0
 ```
 
 Verify:
@@ -78,7 +78,7 @@ docker compose down
 Build the image before deploying to a local cluster:
 
 ```bash
-docker build -t deployable-spring-site:0.1.0 .
+docker build -t k8s-coach:0.1.0 .
 ```
 
 Apply the manifests:
@@ -92,14 +92,14 @@ kubectl apply -f k8s/service.yaml
 Check rollout status:
 
 ```bash
-kubectl rollout status deployment/deployable-spring-site -n spring-demo
-kubectl get pods -n spring-demo
+kubectl rollout status deployment/k8s-coach -n k8s-coach
+kubectl get pods -n k8s-coach
 ```
 
 Port-forward the Service:
 
 ```bash
-kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo
+kubectl port-forward service/k8s-coach 8080:8080 -n k8s-coach
 ```
 
 Then open:

@@ -1,8 +1,8 @@
-package com.example.demo.web;
+package com.example.k8scoach.web;
 
 import java.util.List;
 
-import com.example.demo.app.AppStatusService;
+import com.example.k8scoach.app.AppStatusService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

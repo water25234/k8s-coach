@@ -41,14 +41,14 @@
                 <span class="step-badge">3</span>
                 <div>
                     <h3>建立 image 並加上 tag</h3>
-                    <p>指令 <code>docker build -t deployable-spring-site:0.1.0 .</code> 會建立一個 Docker image，並把 <code>deployable-spring-site:0.1.0</code> 這個 tag 貼到它身上。</p>
+                    <p>指令 <code>docker build -t k8s-coach:0.1.0 .</code> 會建立一個 Docker image，並把 <code>k8s-coach:0.1.0</code> 這個 tag 貼到它身上。</p>
                 </div>
             </article>
             <article>
                 <span class="step-badge">4</span>
                 <div>
                     <h3>Deployment 指定 image</h3>
-                    <p><code>k8s/deployment.yaml</code> 裡的 <code>image: deployable-spring-site:0.1.0</code> 會告訴 Kubernetes：Pod 裡的 container 要用這個 image 啟動。</p>
+                    <p><code>k8s/deployment.yaml</code> 裡的 <code>image: k8s-coach:0.1.0</code> 會告訴 Kubernetes：Pod 裡的 container 要用這個 image 啟動。</p>
                 </div>
             </article>
             <article>
@@ -74,7 +74,7 @@
             <article>
                 <strong>Dockerfile</strong>
                 <p>負責把專案打包成 Docker image。它處理 Java build 和 runtime image。</p>
-                <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                <code>docker build -t k8s-coach:0.1.0 .</code>
             </article>
             <article>
                 <strong>docker-compose.yml</strong>
@@ -84,12 +84,12 @@
             <article>
                 <strong>k8s/deployment.yaml</strong>
                 <p>給 Kubernetes 使用。它不負責 build，而是指定已經存在的 image，然後建立 Pod。</p>
-                <code>image: deployable-spring-site:0.1.0</code>
+                <code>image: k8s-coach:0.1.0</code>
             </article>
             <article>
                 <strong>k8s/service.yaml</strong>
                 <p>給 Kubernetes 網路使用。它負責把流量導到 Deployment 建出的 Pod。</p>
-                <code>selector.app: deployable-spring-site</code>
+                <code>selector.app: k8s-coach</code>
             </article>
         </div>
     </section>
@@ -101,7 +101,7 @@
                 <span>1</span>
                 <div>
                     <strong>先 build image</strong>
-                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                    <code>docker build -t k8s-coach:0.1.0 .</code>
                 </div>
             </li>
             <li>
@@ -129,7 +129,7 @@
                 <span>5</span>
                 <div>
                     <strong>把 Service 暫時接到本機</strong>
-                    <code>kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo</code>
+                    <code>kubectl port-forward service/k8s-coach 8080:8080 -n k8s-coach</code>
                 </div>
             </li>
         </ol>
@@ -146,21 +146,21 @@
                 <span>1</span>
                 <div>
                     <strong>重新產生 image</strong>
-                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                    <code>docker build -t k8s-coach:0.1.0 .</code>
                 </div>
             </li>
             <li>
                 <span>2</span>
                 <div>
                     <strong>要求 Deployment 重啟 Pod</strong>
-                    <code>kubectl rollout restart deployment/deployable-spring-site -n spring-demo</code>
+                    <code>kubectl rollout restart deployment/k8s-coach -n k8s-coach</code>
                 </div>
             </li>
             <li>
                 <span>3</span>
                 <div>
                     <strong>等待新版 Pod 就緒</strong>
-                    <code>kubectl rollout status deployment/deployable-spring-site -n spring-demo</code>
+                    <code>kubectl rollout status deployment/k8s-coach -n k8s-coach</code>
                 </div>
             </li>
         </ol>

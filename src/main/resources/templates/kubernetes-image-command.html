@@ -31,7 +31,7 @@
             <article>
                 <strong>image</strong>
                 <p>已經 build 好的 container 包。Kubernetes 只會用 image 建 container，不會讀你的 Java 原始碼。</p>
-                <code>image: deployable-spring-site:0.1.0</code>
+                <code>image: k8s-coach:0.1.0</code>
             </article>
             <article>
                 <strong>command</strong>
@@ -103,7 +103,7 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]</code></pre>
                     <p>本專案的 Deployment 只寫 <code>image</code>，沒有寫 <code>command</code>。因此 container 啟動時會使用 Dockerfile 裡的 <code>ENTRYPOINT</code>。</p>
                 </article>
                 <article>
-                    <code>image: deployable-spring-site:0.1.0</code>
+                    <code>image: k8s-coach:0.1.0</code>
                     <h3>這只是指定 image</h3>
                     <p>這行不會 build Java、不會執行 Maven。它只告訴 Kubernetes 要用哪個已經 build 好的 image。</p>
                 </article>

@@ -11,7 +11,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 RUN useradd --system --uid 1001 spring
-COPY --from=build /workspace/target/deployable-spring-site-0.1.0.jar app.jar
+COPY --from=build /workspace/target/k8s-coach-0.1.0.jar app.jar
 
 USER spring
 EXPOSE 8080

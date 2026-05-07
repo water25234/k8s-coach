@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>deployable-spring-site</artifactId>
+    <artifactId>k8s-coach</artifactId>
     <version>0.1.0</version>
-    <name>Java 21 Spring Boot Demo</name>
+    <name>K8s Coach</name>
     <description>Deployable Spring Boot starter website for Docker, Docker Compose, and Kubernetes.</description>
 
     <properties>

@@ -1,4 +1,4 @@
-package com.example.demo.app;
+package com.example.k8scoach.app;
 
 import java.time.Instant;
 import java.util.Arrays;

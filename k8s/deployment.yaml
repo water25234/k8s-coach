@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deployable-spring-site
-  namespace: spring-demo
+  name: k8s-coach
+  namespace: k8s-coach
   labels:
-    app: deployable-spring-site
+    app: k8s-coach
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: deployable-spring-site
+      app: k8s-coach
   template:
     metadata:
       labels:
-        app: deployable-spring-site
+        app: k8s-coach
     spec:
       containers:
         - name: app
-          image: deployable-spring-site:0.1.0
+          image: k8s-coach:0.1.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

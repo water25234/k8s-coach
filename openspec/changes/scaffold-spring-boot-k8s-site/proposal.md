@@ -1,6 +1,6 @@
 ## Why
 
-The project needs a clean baseline Spring Boot application that demonstrates a complete path from local development to containerized and Kubernetes deployment. Starting with a small but useful website keeps the first version focused while proving the Java 21, Spring Boot, Docker, Docker Compose, and Kubernetes workflow end to end.
+The project needs a clean baseline Spring Boot application that shows a complete path from local development to containerized and Kubernetes deployment. Starting with a small but useful website keeps the first version focused while proving the Java 21, Spring Boot, Docker, Docker Compose, and Kubernetes workflow end to end.
 
 ## What Changes
 
@@ -15,7 +15,7 @@ The project needs a clean baseline Spring Boot application that demonstrates a c
 ## Capabilities
 
 ### New Capabilities
-- `deployable-spring-site`: A Java 21 Spring Boot website that can run locally, in Docker, through Docker Compose, and on Kubernetes.
+- `k8s-coach`: A Java 21 Spring Boot website that can run locally, in Docker, through Docker Compose, and on Kubernetes.
 
 ### Modified Capabilities
 

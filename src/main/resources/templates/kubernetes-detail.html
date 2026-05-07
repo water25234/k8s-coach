@@ -39,7 +39,7 @@
         <h2>常用檢查指令</h2>
         <ol class="command-list">
             <li th:each="command : ${doc.commands}">
-                <code th:text="${command}">kubectl get pods -n spring-demo</code>
+                <code th:text="${command}">kubectl get pods -n k8s-coach</code>
             </li>
         </ol>
     </section>

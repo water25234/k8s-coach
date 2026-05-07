@@ -2,7 +2,7 @@ services:
   spring-site:
     build:
       context: .
-    image: deployable-spring-site:0.1.0
+    image: k8s-coach:0.1.0
     ports:
       - "8080:8080"
     environment:

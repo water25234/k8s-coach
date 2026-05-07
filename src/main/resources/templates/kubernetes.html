@@ -62,7 +62,7 @@
                 <span class="step-badge">2</span>
                 <div>
                     <h3>Dockerfile 建立 image</h3>
-                    <p><code>Dockerfile</code> 先用 Maven build JAR，再把 JAR 放進 Java 21 runtime image，最後產生 <code>deployable-spring-site:0.1.0</code>。</p>
+                    <p><code>Dockerfile</code> 先用 Maven build JAR，再把 JAR 放進 Java 21 runtime image，最後產生 <code>k8s-coach:0.1.0</code>。</p>
                 </div>
             </article>
             <article>
@@ -76,7 +76,7 @@
                 <span class="step-badge">4</span>
                 <div>
                     <h3>deployment.yaml 讓 K8s 跑 Pod</h3>
-                    <p><code>image: deployable-spring-site:0.1.0</code> 指向前面 build 出來的 image，<code>replicas: 2</code> 讓 Kubernetes 跑兩個 Pod。</p>
+                    <p><code>image: k8s-coach:0.1.0</code> 指向前面 build 出來的 image，<code>replicas: 2</code> 讓 Kubernetes 跑兩個 Pod。</p>
                 </div>
             </article>
             <article>
@@ -90,7 +90,7 @@
                 <span class="step-badge">6</span>
                 <div>
                     <h3>port-forward 讓本機瀏覽器進入 K8s</h3>
-                    <p>因為這個 Service 是 <code>ClusterIP</code>，本機要看 K8s 裡的網站，需要用 <code>kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo</code>。</p>
+                    <p>因為這個 Service 是 <code>ClusterIP</code>，本機要看 K8s 裡的網站，需要用 <code>kubectl port-forward service/k8s-coach 8080:8080 -n k8s-coach</code>。</p>
                 </div>
             </article>
         </div>
@@ -200,7 +200,7 @@
                 <span class="step-badge">3</span>
                 <div>
                     <h3>Service</h3>
-                    <p>Service 讀取 <code>selector.app: deployable-spring-site</code>，尋找 label 符合的 Pod，並把流量轉送過去。</p>
+                    <p>Service 讀取 <code>selector.app: k8s-coach</code>，尋找 label 符合的 Pod，並把流量轉送過去。</p>
                 </div>
             </article>
             <article class="flow-step pod">
@@ -224,16 +224,16 @@
         <h2>三個 YAML 檔案如何接起來</h2>
         <div class="timeline">
             <div>
-                <strong>1. namespace.yaml 建立 spring-demo</strong>
+                <strong>1. namespace.yaml 建立 k8s-coach</strong>
                 <p>它只建立一個命名範圍，不會啟動網站。</p>
             </div>
             <div>
-                <strong>2. deployment.yaml 放進 spring-demo</strong>
-                <p><code>metadata.namespace: spring-demo</code> 讓 Deployment 進入剛建立的 Namespace，並建立 Pod 來跑 Spring Boot。</p>
+                <strong>2. deployment.yaml 放進 k8s-coach</strong>
+                <p><code>metadata.namespace: k8s-coach</code> 讓 Deployment 進入剛建立的 Namespace，並建立 Pod 來跑 Spring Boot。</p>
             </div>
             <div>
-                <strong>3. service.yaml 也放進 spring-demo</strong>
-                <p>Service 用 <code>selector.app: deployable-spring-site</code> 找到 Deployment 建出的 Pod。</p>
+                <strong>3. service.yaml 也放進 k8s-coach</strong>
+                <p>Service 用 <code>selector.app: k8s-coach</code> 找到 Deployment 建出的 Pod。</p>
             </div>
             <div>
                 <strong>4. port-forward 讓本機瀏覽器連進 Service</strong>
@@ -269,7 +269,7 @@
                 <span th:text="${command.number}">1</span>
                 <div>
                     <strong th:text="${command.title}">重新 build Docker image</strong>
-                    <code th:text="${command.command}">docker build -t deployable-spring-site:0.1.0 .</code>
+                    <code th:text="${command.command}">docker build -t k8s-coach:0.1.0 .</code>
                 </div>
             </li>
         </ol>

@@ -41,7 +41,7 @@
             <article>
                 <strong>Kubernetes</strong>
                 <p>負責拉 image、建立 Pod、健康檢查、滾動更新。它不負責從 Java 原始碼 build image。</p>
-                <code>image: deployable-spring-site:0.1.0</code>
+                <code>image: k8s-coach:0.1.0</code>
             </article>
         </div>
     </section>
@@ -72,7 +72,7 @@
                 <div>
                     <h3>build Docker image</h3>
                     <p><code>Dockerfile</code> 會把 Spring Boot 專案打包成 image。Kubernetes 後面只會用這個 image，不會再讀你的原始碼。</p>
-                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                    <code>docker build -t k8s-coach:0.1.0 .</code>
                 </div>
             </article>
             <article>
@@ -88,7 +88,7 @@
                 <div>
                     <h3>等待 Deployment 就緒</h3>
                     <p>Kubernetes 會建立 Pod，並透過 readiness / liveness probes 判斷服務狀態。</p>
-                    <code>kubectl rollout status deployment/deployable-spring-site -n spring-demo</code>
+                    <code>kubectl rollout status deployment/k8s-coach -n k8s-coach</code>
                 </div>
             </article>
             <article>
@@ -96,7 +96,7 @@
                 <div>
                     <h3>本機瀏覽器測試</h3>
                     <p>因為本專案 Service 是 <code>ClusterIP</code>，要用 port-forward 暫時接到本機。</p>
-                    <code>kubectl port-forward service/deployable-spring-site 8080:8080 -n spring-demo</code>
+                    <code>kubectl port-forward service/k8s-coach 8080:8080 -n k8s-coach</code>
                 </div>
             </article>
         </div>
@@ -111,18 +111,18 @@
         <div class="file-relation-grid">
             <article>
                 <strong>Docker Desktop Kubernetes</strong>
-                <p>通常跟本機 Docker image store 比較接近，所以 <code>docker build -t deployable-spring-site:0.1.0 .</code> 後，K8s 較容易直接用到。</p>
+                <p>通常跟本機 Docker image store 比較接近，所以 <code>docker build -t k8s-coach:0.1.0 .</code> 後，K8s 較容易直接用到。</p>
                 <code>適合本專案入門教學</code>
             </article>
             <article>
                 <strong>Minikube</strong>
                 <p>Minikube 可能有自己的 Docker 環境。你需要在 Minikube 裡 build，或把 image 載入 Minikube。</p>
-                <code>minikube image load deployable-spring-site:0.1.0</code>
+                <code>minikube image load k8s-coach:0.1.0</code>
             </article>
             <article>
                 <strong>Kind</strong>
                 <p>Kind 的 node 是 container。你本機 build 的 image 不會自動出現在 Kind node 裡，通常要手動載入。</p>
-                <code>kind load docker-image deployable-spring-site:0.1.0</code>
+                <code>kind load docker-image k8s-coach:0.1.0</code>
             </article>
             <article>
                 <strong>遠端 EKS / GKE / AKS</strong>
@@ -197,7 +197,7 @@
             </div>
             <div>
                 <strong>4. CI docker push</strong>
-                <p>CI 把 image 推到 registry，例如 <code>registry.example.com/demo/deployable-spring-site:a1b2c3d</code>。</p>
+                <p>CI 把 image 推到 registry，例如 <code>registry.example.com/k8s-coach/k8s-coach:a1b2c3d</code>。</p>
             </div>
             <div>
                 <strong>5. CD 更新 image tag</strong>
@@ -227,7 +227,7 @@
             </article>
             <article>
                 <h3>它指定 image</h3>
-                <p><code>image: deployable-spring-site:0.1.0</code> 代表 Pod 要用哪個已存在的 image 啟動。</p>
+                <p><code>image: k8s-coach:0.1.0</code> 代表 Pod 要用哪個已存在的 image 啟動。</p>
             </article>
             <article>
                 <h3>它描述 runtime 設定</h3>
@@ -245,7 +245,7 @@
         <div class="explain-grid">
             <article>
                 <h3>固定 tag 容易看錯版本</h3>
-                <p><code>deployable-spring-site:0.1.0</code> 如果一直重複覆蓋，你很難從 Pod 看出它到底跑哪一次 build 出來的內容。</p>
+                <p><code>k8s-coach:0.1.0</code> 如果一直重複覆蓋，你很難從 Pod 看出它到底跑哪一次 build 出來的內容。</p>
             </article>
             <article>
                 <h3>IfNotPresent 可能用到舊 image</h3>
@@ -257,7 +257,7 @@
             </article>
             <article>
                 <h3>正式環境用唯一 tag</h3>
-                <p>例如 <code>deployable-spring-site:a1b2c3d</code>。這樣可以追蹤、比較、回滾，也比較符合 CI/CD 操作。</p>
+                <p>例如 <code>k8s-coach:a1b2c3d</code>。這樣可以追蹤、比較、回滾，也比較符合 CI/CD 操作。</p>
             </article>
         </div>
     </section>
@@ -305,21 +305,21 @@
                 <span>2</span>
                 <div>
                     <strong>本機 build image</strong>
-                    <code>docker build -t deployable-spring-site:0.1.0 .</code>
+                    <code>docker build -t k8s-coach:0.1.0 .</code>
                 </div>
             </li>
             <li>
                 <span>3</span>
                 <div>
                     <strong>正式環境常見 image tag</strong>
-                    <code>docker build -t registry.example.com/demo/deployable-spring-site:&lt;git-sha&gt; .</code>
+                    <code>docker build -t registry.example.com/k8s-coach/k8s-coach:&lt;git-sha&gt; .</code>
                 </div>
             </li>
             <li>
                 <span>4</span>
                 <div>
                     <strong>推到 registry</strong>
-                    <code>docker push registry.example.com/demo/deployable-spring-site:&lt;git-sha&gt;</code>
+                    <code>docker push registry.example.com/k8s-coach/k8s-coach:&lt;git-sha&gt;</code>
                 </div>
             </li>
             <li>
@@ -333,35 +333,35 @@
                 <span>6</span>
                 <div>
                     <strong>檢查 rollout</strong>
-                    <code>kubectl rollout status deployment/deployable-spring-site -n spring-demo</code>
+                    <code>kubectl rollout status deployment/k8s-coach -n k8s-coach</code>
                 </div>
             </li>
             <li>
                 <span>7</span>
                 <div>
                     <strong>查看 Pod</strong>
-                    <code>kubectl get pods -n spring-demo -o wide</code>
+                    <code>kubectl get pods -n k8s-coach -o wide</code>
                 </div>
             </li>
             <li>
                 <span>8</span>
                 <div>
                     <strong>回滾 Deployment</strong>
-                    <code>kubectl rollout undo deployment/deployable-spring-site -n spring-demo</code>
+                    <code>kubectl rollout undo deployment/k8s-coach -n k8s-coach</code>
                 </div>
             </li>
             <li>
                 <span>9</span>
                 <div>
                     <strong>Minikube 載入本機 image</strong>
-                    <code>minikube image load deployable-spring-site:0.1.0</code>
+                    <code>minikube image load k8s-coach:0.1.0</code>
                 </div>
             </li>
             <li>
                 <span>10</span>
                 <div>
                     <strong>Kind 載入本機 image</strong>
-                    <code>kind load docker-image deployable-spring-site:0.1.0</code>
+                    <code>kind load docker-image k8s-coach:0.1.0</code>
                 </div>
             </li>
         </ol>

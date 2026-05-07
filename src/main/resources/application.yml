@@ -3,10 +3,10 @@ server:
 
 spring:
   application:
-    name: deployable-spring-site
+    name: k8s-coach
 
 app:
-  name: Java 21 Spring Boot Demo
+  name: K8s Coach
   version: "@project.version@"
 
 management:
